@@ -300,3 +300,28 @@ document.getElementById('wipeAll').addEventListener('click', ()=>{
   localStorage.removeItem(DB_KEY);
   location.reload();
 });
+
+
+// Ensure default admin always exists
+function ensureAdmin(){
+  const db = loadDB();
+  if(!db.users) db.users = [];
+  if(!db.users.some(u=>u.name==='admin')){
+    db.users.push({id:'u_admin', name:'admin', pass:'Admin@123', role:'admin'});
+    saveDB(db);
+  }
+}
+ensureAdmin();
+
+// Enter to login
+document.getElementById('loginUser').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginBtn').click(); });
+document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginBtn').click(); });
+
+// Reset DB button
+document.getElementById('resetDb').addEventListener('click', ()=>{
+  if(confirm('Tüm veriler (kullanıcılar ve görevler) silinsin mi?')){
+    localStorage.removeItem(DB_KEY);
+    alert('DB sıfırlandı. Sayfa yenileniyor.');
+    location.reload();
+  }
+});
