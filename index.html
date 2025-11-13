@@ -1,11 +1,37 @@
 <!doctype html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>İş Takip v2 – Sipariş Akışlı</title>
-  <meta name="description" content="Şifre kapılı, rol tabanlı iş takip. Sipariş bazlı akış ve arşiv.">
-  <link rel="stylesheet" href="styles.css"/>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>İş Takip v2.1 (Tek Dosya)</title>
+<meta name="description" content="Şifre kapılı, sipariş akışlı, rol tabanlı iş takip. İlerleme barı + @mention mesajlaşma."/>
+<style>
+:root{--bg:#ffffff;--text:#0b0c10;--muted:#6b7280;--border:#e5e7eb;--brand:#111827;--primary:#111827;--danger:#e11d48;--ok:#059669;}
+*{box-sizing:border-box} html,body{height:100%} body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter}
+h1,h2,h3{margin:.2rem 0 .6rem} .center{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.card{width:min(92%,860px);background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.06)}
+input,select,button,textarea{padding:10px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text)} input,select,textarea{width:100%}
+button{cursor:pointer;background:var(--primary);color:#fff;border-color:var(--primary)} button:hover{filter:brightness(1.05)}
+button.danger{background:var(--danger);border-color:var(--danger)} button.ghost{background:#fff;color:var(--primary)}
+.muted{color:var(--muted)} code{background:#f3f4f6;border:1px solid var(--border);border-radius:8px;padding:2px 6px}
+.topbar{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;z-index:2}
+.brand{font-weight:800;color:var(--brand)} .tabs{display:flex;gap:8px} .tab{background:#fff;color:#111827;border:1px solid var(--border)} .tab.active{background:#111827;color:#fff}
+.userbox{display:flex;gap:8px;align-items:center} .container{max-width:1100px;margin:20px auto;padding:0 14px}
+.row{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap} .col{flex:1 1 360px} .col.right{text-align:right}
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px}
+.form-grid-5{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr auto;gap:8px}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px}
+.table{width:100%;border-collapse:collapse} .table th,.table td{padding:10px;border-bottom:1px solid var(--border);text-align:left} .table tr:hover{background:#f9fafb}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:#f3f4f6}
+.badge.done{background:#dcfce7;border-color:#86efac;color:#166534} .badge.warn{background:#fef9c3;border-color:#fde68a;color:#92400e}
+.gate{position:fixed;inset:0;background:#f8fafc;display:flex;align-items:center;justify-content:center}
+.stages{padding-left:18px} .stages li{margin:.3rem 0} .danger{color:var(--danger)} select.small{padding:6px 8px}
+.footer{margin:12px auto;text-align:center;color:#9aa0a6;font-size:.85rem}
+.progress{width:160px;height:10px;background:#f3f4f6;border-radius:999px;border:1px solid var(--border);overflow:hidden}
+.progress>span{display:block;height:100%;background:linear-gradient(90deg,#111827,#4b5563)}
+.msgbox{border:1px solid var(--border);border-radius:12px;padding:10px;background:#fafafa;max-height:240px;overflow:auto}
+.msg{margin-bottom:8px} .msg .meta{font-size:.8rem;color:#6b7280}
+</style>
 </head>
 <body>
   <div id="gate" class="gate">
@@ -27,14 +53,14 @@
       <input id="loginPass" type="password" placeholder="••••••"/>
       <button id="loginBtn">Giriş</button>
       <button id="resetDb" class="ghost">DB'yi Sıfırla</button>
-      <p class="muted">İlk kez kullanıyorsan varsayılan admin: <code>admin / Admin@123</code></p>
+      <p class="muted">Varsayılan admin: <code>admin / Admin@123</code></p>
       <p id="authMsg" class="danger"></p>
     </div>
   </div>
 
   <div id="app" hidden>
     <header class="topbar">
-      <div class="brand">İş Takip v2</div>
+      <div class="brand">İş Takip v2.1 <span class="muted" style="font-weight:400">• tek dosya</span></div>
       <nav class="tabs">
         <button data-tab="orders" class="tab active">Siparişler</button>
         <button data-tab="tasks" class="tab">Görevler</button>
@@ -59,7 +85,7 @@
               <select id="oFirstAssignee"></select>
               <button id="oAdd">Ekle</button>
             </div>
-            <p class="muted">İlk adım varsayılanı <b>Placed</b>. Seçtiğin şablonun adımları sırayla uygulanır.</p>
+            <p class="muted">İlk adım: <b>Placed</b>. Şablon adımları sırayla ilerler, son adımda arşive gider.</p>
           </div>
           <div class="col right">
             <div class="filters">
@@ -67,16 +93,25 @@
             </div>
           </div>
         </div>
-
         <div class="table-wrap">
           <table class="table">
-            <thead>
-              <tr>
-                <th>Kod</th><th>Placed</th><th>Adım</th><th>Atanan</th><th>Durum</th><th>İşlem</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Kod</th><th>Placed</th><th>Adım</th><th>İlerleme</th><th>Atanan</th><th>Durum</th><th>İşlem</th></tr></thead>
             <tbody id="orderBody"></tbody>
           </table>
+        </div>
+
+        <div class="card" id="orderDetail" hidden>
+          <h3 id="odTitle">Sipariş detay</h3>
+          <div class="row">
+            <div class="col">
+              <div class="msgbox" id="msgList"></div>
+              <div class="form-grid" style="grid-template-columns:1fr auto;">
+                <input id="msgInput" placeholder="Mesaj yaz (örn: @cim Proformayı yükler misin?)"/>
+                <button id="msgSend">Gönder</button>
+              </div>
+              <p class="muted">Not: @kullanici ile yazdığın mesajı **sadece** o kullanıcı (ve admin) görür.</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -85,28 +120,22 @@
           <div class="col">
             <h3>Yeni görev</h3>
             <div class="form-grid">
-              <input id="tTitle" placeholder="Başlık (örn. Fatura dosyası yükleme)"/>
+              <input id="tTitle" placeholder="Başlık"/>
               <select id="tAssignee"></select>
               <select id="tStage"></select>
               <button id="tAdd">Ekle</button>
             </div>
-            <p class="muted">Sadece admin görev atayabilir. Kullanıcılar kendi görevlerini ilerletebilir.</p>
           </div>
           <div class="col right">
             <div class="filters">
-              <label><input type="checkbox" id="onlyMine"/> Sadece benim görevlerim</label>
+              <label><input type="checkbox" id="onlyMine"/> Sadece benim</label>
               <label><input type="checkbox" id="hideDone"/> Tamamlananları gizle</label>
             </div>
           </div>
         </div>
-
         <div class="table-wrap">
           <table class="table">
-            <thead>
-              <tr>
-                <th>#</th><th>Başlık</th><th>Atanan</th><th>Aşama</th><th>Durum</th><th>İşlem</th>
-              </tr>
-            </thead>
+            <thead><tr><th>#</th><th>Başlık</th><th>Atanan</th><th>Aşama</th><th>Durum</th><th>İşlem</th></tr></thead>
             <tbody id="taskBody"></tbody>
           </table>
         </div>
@@ -117,12 +146,9 @@
           <div class="col">
             <h3>Kullanıcılar</h3>
             <div class="form-grid">
-              <input id="uName" placeholder="Kullanıcı adı (örn. ege)"/>
+              <input id="uName" placeholder="Kullanıcı adı"/>
               <input id="uPass" placeholder="Şifre" type="password"/>
-              <select id="uRole">
-                <option value="user">user</option>
-                <option value="admin">admin</option>
-              </select>
+              <select id="uRole"><option value="user">user</option><option value="admin">admin</option></select>
               <button id="uAdd">Ekle</button>
             </div>
             <div class="table-wrap">
@@ -136,24 +162,22 @@
             <h3>Toplu işlemler</h3>
             <button id="seedDemo">Demo veri yükle</button>
             <button id="wipeAll" class="danger">Tüm veriyi sil</button>
-            <p class="muted">Tüm veriler tarayıcının <b>localStorage</b>'ında saklanır.</p>
+            <p class="muted">Veriler <b>localStorage</b>'da.</p>
           </div>
         </div>
       </section>
 
       <section id="tab-settings" hidden>
-        <h3>Workflow aşamaları</h3>
-        <p class="muted">Aşamalar sırayla ilerler: ilk aşama başlangıç, son aşama tamamlanmış sayılır.</p>
+        <h3>Görev aşamaları</h3>
         <div class="form-grid">
-          <input id="stageInput" placeholder="Aşama adı (örn. Backlog)"/>
+          <input id="stageInput" placeholder="Aşama adı"/>
           <button id="stageAdd">Aşama ekle</button>
         </div>
         <ol id="stageList" class="stages"></ol>
 
         <h3 style="margin-top:1.2rem">Sipariş şablonları</h3>
-        <p class="muted">Şablonlar, yeni sipariş açarken seçilir.</p>
         <div class="form-grid-5">
-          <input id="tplName" placeholder="Şablon adı (örn. ETA Süreci)"/>
+          <input id="tplName" placeholder="Şablon adı"/>
           <input id="tplSteps" placeholder="Adımlar (virgülle)"/>
           <button id="tplAdd">Şablon ekle</button>
           <button id="tplReset">Varsayılan şablon</button>
@@ -162,10 +186,235 @@
 
         <button id="stageReset" style="margin-top:8px">Varsayılan görev aşamaları</button>
       </section>
+      <div class="footer">v2.1 • tek-dosya • HELLOWORLD kapı • admin/Admin@123</div>
     </main>
   </div>
 
-  <script>window.HELLO_HASH="0b21b7db59cd154904fac6336fa7d2be1bab38d632794f281549584068cdcb74";</script>
-  <script src="app.js"></script>
+<script>
+// ---- Kapı: HELLOWORLD ----
+const HELLO_HASH="0b21b7db59cd154904fac6336fa7d2be1bab38d632794f281549584068cdcb74";
+async function sha256Hex(s){ const buf=new TextEncoder().encode(s); const d=await crypto.subtle.digest('SHA-256',buf); return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,'0')).join(''); }
+document.getElementById('gateBtn').addEventListener('click', async ()=>{
+  const v=(document.getElementById('gatePw').value||'').trim(); const hex=await sha256Hex(v);
+  if(hex===HELLO_HASH){ document.getElementById('gate').style.display='none'; document.getElementById('auth').hidden=false; }
+  else document.getElementById('gateMsg').textContent="Şifre yanlış.";
+});
+
+// ---- DB ----
+const DB_KEY="taskapp.db.single.v2_1";
+const loadDB=()=>{ try{return JSON.parse(localStorage.getItem(DB_KEY))||{};}catch{return{};} };
+const saveDB=db=>localStorage.setItem(DB_KEY,JSON.stringify(db));
+(function seed(){ const db=loadDB();
+  if(!db.users) db.users=[{id:"u_admin",name:"admin",pass:"Admin@123",role:"admin"}];
+  if(!db.stages) db.stages=["Backlog","In Progress","Review","Done"];
+  if(!db.tasks) db.tasks=[];
+  if(!db.templates) db.templates=[{id:"tpl_eta",name:"ETA Süreci",steps:["Placed","ETA'ya Sipariş Girişi","Proforma Al","Proforma Onay","Sevk","Fatura Girişi","Depo Giriş","Done"]}];
+  if(!db.orders) db.orders=[]; // {id, code, placedAt, steps[], idx, archived, currentAssignee}
+  if(!db.messages) db.messages=[]; // {id, orderId, fromUserId, toUserId|null, body, ts}
+  saveDB(db);
+})();
+
+// ---- Auth ----
+let currentUser=null;
+const isAdmin=()=>currentUser&&currentUser.role==="admin";
+const renderWho=()=>document.getElementById('whoami').textContent=currentUser?`${currentUser.name} (${currentUser.role})`:"-";
+document.getElementById('loginBtn').addEventListener('click',()=>{
+  const u=document.getElementById('loginUser').value.trim();
+  const p=document.getElementById('loginPass').value;
+  const db=loadDB(); const f=(db.users||[]).find(x=>x.name===u&&x.pass===p);
+  const msg=document.getElementById('authMsg');
+  if(f){ currentUser=f; document.getElementById('auth').hidden=true; document.getElementById('app').hidden=false;
+    renderWho(); renderTabs(); renderUsers(); renderStages(); renderTemplates(); fillAssigneeOptions(); fillStageOptions(); renderTasks(); renderOrders();
+  } else msg.textContent="Kullanıcı adı veya şifre hatalı.";
+});
+document.getElementById('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click();});
+document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click();});
+document.getElementById('logout').addEventListener('click',()=>{currentUser=null;document.getElementById('app').hidden=true;document.getElementById('auth').hidden=false;});
+document.getElementById('resetDb').addEventListener('click',()=>{ if(confirm('Tüm veriler silinsin mi?')){ localStorage.removeItem(DB_KEY); location.reload(); } });
+
+// ---- Tabs ----
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  const t=btn.dataset.tab;
+  document.getElementById('tab-orders').hidden=t!=='orders';
+  document.getElementById('tab-tasks').hidden=t!=='tasks';
+  document.getElementById('tab-admin').hidden=t!=='admin';
+  document.getElementById('tab-settings').hidden=t!=='settings';
+}));
+function renderTabs(){ const a=[...document.querySelectorAll('.tab')].find(b=>b.dataset.tab==='admin'); a.style.display=isAdmin()?'inline-block':'none'; }
+
+// ---- Users ----
+function renderUsers(){ const db=loadDB(); const body=document.getElementById('userBody'); body.innerHTML='';
+  (db.users||[]).forEach(u=>{ const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${u.name}</td><td><span class="badge">${u.role}</span></td><td>${u.name!=='admin'?`<button class="ghost" data-del="${u.id}">Sil</button>`:''}</td>`; body.appendChild(tr); });
+  body.querySelectorAll('button[data-del]').forEach(btn=>btn.addEventListener('click',()=>{
+    const id=btn.dataset.del; if(!confirm('Kullanıcı silinsin mi?')) return; const db2=loadDB(); db2.users=db2.users.filter(x=>x.id!==id); saveDB(db2); renderUsers(); fillAssigneeOptions(); renderOrders();
+  }));
+}
+document.getElementById('uAdd').addEventListener('click',()=>{
+  if(!isAdmin()) return alert('Sadece admin kullanıcı ekler.');
+  const name=document.getElementById('uName').value.trim(); const pass=document.getElementById('uPass').value; const role=document.getElementById('uRole').value;
+  if(!name||!pass) return alert('Ad ve şifre gerekli.');
+  const db=loadDB(); if(db.users.some(u=>u.name===name)) return alert('Bu isimde kullanıcı var.');
+  db.users.push({id:'u_'+Math.random().toString(36).slice(2,8),name,pass,role}); saveDB(db);
+  document.getElementById('uName').value=''; document.getElementById('uPass').value=''; renderUsers(); fillAssigneeOptions(); renderOrders();
+});
+
+// ---- Stages (tasks) ----
+function renderStages(){ const db=loadDB(); const list=document.getElementById('stageList'); list.innerHTML='';
+  (db.stages||[]).forEach((s,i)=>{ const li=document.createElement('li'); li.innerHTML=`${i+1}. ${s} ${isAdmin()?`<button class="ghost" data-rm="${i}">Kaldır</button>`:''}`; list.appendChild(li); });
+  list.querySelectorAll('button[data-rm]').forEach(btn=>btn.addEventListener('click',()=>{
+    if(!isAdmin()) return; const idx=+btn.dataset.rm; const db2=loadDB(); db2.stages.splice(idx,1); saveDB(db2); renderStages(); fillStageOptions(); renderTasks();
+  }));
+}
+document.getElementById('stageAdd').addEventListener('click',()=>{
+  if(!isAdmin()) return; const val=document.getElementById('stageInput').value.trim(); if(!val) return;
+  const db=loadDB(); db.stages.push(val); saveDB(db); document.getElementById('stageInput').value=''; renderStages(); fillStageOptions();
+});
+document.getElementById('stageReset').addEventListener('click',()=>{
+  if(!isAdmin()) return; const db=loadDB(); db.stages=["Backlog","In Progress","Review","Done"]; saveDB(db); renderStages(); fillStageOptions(); renderTasks();
+});
+function fillAssigneeOptions(){ const db=loadDB(); const sel1=document.getElementById('tAssignee'); const sel2=document.getElementById('oFirstAssignee');
+  [sel1,sel2].forEach(sel=>{ if(!sel) return; sel.innerHTML=''; (db.users||[]).forEach(u=>{ const o=document.createElement('option'); o.value=u.id; o.textContent=u.name+(u.role==='admin'?' (admin)':''); sel.appendChild(o); }); });
+}
+function fillStageOptions(){ const db=loadDB(); const sel=document.getElementById('tStage'); sel.innerHTML=''; (db.stages||[]).forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); }); }
+
+// ---- Templates ----
+function renderTemplates(){ const db=loadDB(); const list=document.getElementById('tplList'); const sel=document.getElementById('oTemplate'); list.innerHTML=''; sel.innerHTML='';
+  (db.templates||[]).forEach(t=>{ const li=document.createElement('li'); li.textContent=`${t.name}: ${t.steps.join(' → ')}`; list.appendChild(li);
+    const o=document.createElement('option'); o.value=t.id; o.textContent=t.name; sel.appendChild(o); });
+}
+document.getElementById('tplAdd').addEventListener('click',()=>{
+  if(!isAdmin()) return; const name=document.getElementById('tplName').value.trim();
+  const steps=document.getElementById('tplSteps').value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(!name||steps.length<2) return alert('En az 2 adım.');
+  const db=loadDB(); db.templates.push({id:'tpl_'+Math.random().toString(36).slice(2,8),name,steps}); saveDB(db);
+  document.getElementById('tplName').value=''; document.getElementById('tplSteps').value=''; renderTemplates();
+});
+document.getElementById('tplReset').addEventListener('click',()=>{
+  if(!isAdmin()) return; const db=loadDB();
+  db.templates=[{id:"tpl_eta",name:"ETA Süreci",steps:["Placed","ETA'ya Sipariş Girişi","Proforma Al","Proforma Onay","Sevk","Fatura Girişi","Depo Giriş","Done"]}];
+  saveDB(db); renderTemplates();
+});
+
+// ---- Orders + messages ----
+let selectedOrderId=null;
+function canActOn(o){ return isAdmin() || (currentUser && currentUser.id===o.currentAssignee); }
+function orderProgress(o){ const max=Math.max(o.steps.length-1,1); return Math.round((o.idx/max)*100); }
+
+function renderOrders(){ const db=loadDB(); const showArchived=document.getElementById('showArchived').checked; const body=document.getElementById('orderBody'); body.innerHTML='';
+  (db.orders||[]).filter(o=> showArchived || !o.archived).forEach(o=>{
+    const step=o.steps[o.idx]||'Done';
+    const tr=document.createElement('tr'); tr.innerHTML=`
+      <td><a href="#" data-open="${o.id}">${o.code}</a></td>
+      <td>${o.placedAt}</td>
+      <td><span class="badge ${step==='Done'?'done':'warn'}">${step}</span></td>
+      <td>
+        <div class="progress" title="${orderProgress(o)}%"><span style="width:${orderProgress(o)}%"></span></div>
+      </td>
+      <td><select class="small" data-assign="${o.id}">${(db.users||[]).map(u=>`<option value="${u.id}" ${u.id===o.currentAssignee?'selected':''}>${u.name}</option>`).join('')}</select></td>
+      <td>${o.archived?'<span class="badge done">Arşiv</span>':'<span class="badge warn">Aktif</span>'}</td>
+      <td>${canActOn(o)?`<button data-done="${o.id}">Yapıldı</button>`:''} ${isAdmin()?`<button class="ghost" data-archive="${o.id}">${o.archived?'Geri Al':'Arşivle'}</button>`:''}</td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('a[data-open]').forEach(a=>a.addEventListener('click',(e)=>{e.preventDefault(); openOrder(a.dataset.open);}));
+  body.querySelectorAll('select[data-assign]').forEach(sel=>sel.addEventListener('change',()=>{
+    const id=sel.dataset.assign; const db2=loadDB(); const o=db2.orders.find(x=>x.id===id); o.currentAssignee=sel.value; saveDB(db2); renderOrders();
+  }));
+  body.querySelectorAll('button[data-done]').forEach(btn=>btn.addEventListener('click',()=>{
+    const id=btn.dataset.done; const db2=loadDB(); const o=db2.orders.find(x=>x.id===id); if(!canActOn(o)) return alert('Sadece atanan kişi veya admin.');
+    o.idx=Math.min(o.idx+1,o.steps.length-1); if(o.steps[o.idx]==='Done') o.archived=true; saveDB(db2); renderOrders(); if(selectedOrderId===id) openOrder(id);
+  }));
+  body.querySelectorAll('button[data-archive]').forEach(btn=>btn.addEventListener('click',()=>{
+    const id=btn.dataset.archive; const db2=loadDB(); const o=db2.orders.find(x=>x.id===id); o.archived=!o.archived; saveDB(db2); renderOrders();
+  }));
+}
+document.getElementById('showArchived').addEventListener('change',renderOrders);
+
+document.getElementById('oAdd').addEventListener('click',()=>{
+  if(!isAdmin()) return alert('Sadece admin sipariş açar.');
+  const code=document.getElementById('oCode').value.trim(); const placed=document.getElementById('oPlaced').value;
+  const tplId=document.getElementById('oTemplate').value; const assignee=document.getElementById('oFirstAssignee').value;
+  if(!code) return alert('Kod gerekli.'); const db=loadDB(); if((db.orders||[]).some(o=>o.code===code)) return alert('Kod unique olmalı.');
+  const tpl=(db.templates||[]).find(t=>t.id===tplId);
+  db.orders.push({id:'o_'+Math.random().toString(36).slice(2,8), code, placedAt: placed || new Date().toISOString().slice(0,10),
+                  tplId, steps: tpl?tpl.steps:["Placed","Done"], idx:0, archived:false, currentAssignee: assignee});
+  saveDB(db); document.getElementById('oCode').value=''; renderOrders();
+});
+
+function openOrder(orderId){
+  selectedOrderId=orderId; const db=loadDB(); const o=db.orders.find(x=>x.id===orderId);
+  const box=document.getElementById('orderDetail'); const title=document.getElementById('odTitle');
+  title.textContent = `Sipariş: ${o.code} • Adım: ${o.steps[o.idx]} • ${orderProgress(o)}%`;
+  box.hidden=false;
+  renderMessages();
+}
+
+function parseMention(body){
+  const m = body.match(/@([a-zA-Z0-9_\-]+)/);
+  return m? m[1] : null;
+}
+function renderMessages(){
+  const db=loadDB(); const list=document.getElementById('msgList'); list.innerHTML='';
+  const msgs=(db.messages||[]).filter(m=>m.orderId===selectedOrderId).filter(m=>{
+    if(!m.toUserId) return true; // herkese açık değilse:
+    return isAdmin() || (currentUser && (m.toUserId===currentUser.id || m.fromUserId===currentUser.id));
+  }).sort((a,b)=>a.ts-b.ts);
+  msgs.forEach(m=>{
+    const from=(db.users||[]).find(u=>u.id===m.fromUserId);
+    const to=m.toUserId ? (db.users||[]).find(u=>u.id===m.toUserId) : null;
+    const div=document.createElement('div'); div.className='msg';
+    div.innerHTML=`<div class="meta">${new Date(m.ts).toLocaleString()} • ${from?from.name:'?'}
+      ${to?` → @${to.name}`:''}</div><div>${escapeHtml(m.body)}</div>`;
+    list.appendChild(div);
+  });
+  list.scrollTop = list.scrollHeight;
+}
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+document.getElementById('msgSend').addEventListener('click',()=>{
+  if(!selectedOrderId) return alert('Önce bir sipariş aç.');
+  const inp=document.getElementById('msgInput'); const body=inp.value.trim(); if(!body) return;
+  const db=loadDB(); const order=db.orders.find(x=>x.id===selectedOrderId);
+  const uname=parseMention(body); let toUserId=null;
+  if(uname){ const u=(db.users||[]).find(x=>x.name.toLowerCase()===uname.toLowerCase()); if(u) toUserId=u.id; }
+  db.messages.push({id:'m_'+Math.random().toString(36).slice(2,8), orderId:selectedOrderId, fromUserId:currentUser.id, toUserId, body, ts:Date.now()});
+  saveDB(db); inp.value=''; renderMessages();
+});
+
+// ---- Tasks ----
+function nextStageOf(s){ const db=loadDB(); const i=(db.stages||[]).indexOf(s); if(i>=0 && i<db.stages.length-1) return db.stages[i+1]; return null; }
+function renderTasks(){ const db=loadDB(); const onlyMine=document.getElementById('onlyMine').checked; const hideDone=document.getElementById('hideDone').checked; const body=document.getElementById('taskBody'); body.innerHTML='';
+  const me=currentUser?.id;
+  (db.tasks||[]).filter(t=>{ if(onlyMine&&t.assignee!==me) return false; if(hideDone&&t.status==='Done') return false; return true; }).forEach((t,i)=>{
+    const user=(db.users||[]).find(u=>u.id===t.assignee); const next=nextStageOf(t.stage); const can=(currentUser&&(currentUser.id===t.assignee||isAdmin()));
+    const tr=document.createElement('tr'); tr.innerHTML=`
+      <td>${i+1}</td><td>${t.title}</td><td>${user?user.name:'-'}</td>
+      <td><span class="badge ${t.stage==='Done'?'done':'warn'}">${t.stage}</span></td>
+      <td>${t.status==='Done'?'<span class="badge done">Tamamlandı</span>':'<span class="badge warn">Devam</span>'}</td>
+      <td>${can&&next?`<button data-adv="${t.id}">Aşama: ${next} →</button>`:''}
+          ${can&&!next?`<button data-done="${t.id}">Bitir</button>`:''}
+          ${isAdmin()?`<button class="ghost" data-del="${t.id}">Sil</button>`:''}</td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('button[data-adv]').forEach(b=>b.addEventListener('click',()=>{
+    const id=b.dataset.adv; const db2=loadDB(); const t=db2.tasks.find(x=>x.id===id); t.stage=nextStageOf(t.stage); saveDB(db2); renderTasks();
+  }));
+  body.querySelectorAll('button[data-done]').forEach(b=>b.addEventListener('click',()=>{
+    const id=b.dataset.done; const db2=loadDB(); const t=db2.tasks.find(x=>x.id===id); t.stage="Done"; t.status="Done"; saveDB(db2); renderTasks();
+  }));
+  body.querySelectorAll('button[data-del]').forEach(b=>b.addEventListener('click',()=>{
+    if(!confirm('Görev silinsin mi?')) return; const id=b.dataset.del; const db2=loadDB(); db2.tasks=db2.tasks.filter(x=>x.id!==id); saveDB(db2); renderTasks();
+  }));
+}
+document.getElementById('tAdd').addEventListener('click',()=>{
+  if(!isAdmin()) return alert('Sadece admin görev ekler.');
+  const title=document.getElementById('tTitle').value.trim(); const assignee=document.getElementById('tAssignee').value; const stage=document.getElementById('tStage').value;
+  if(!title) return alert('Başlık gir.'); const db=loadDB(); db.tasks.push({id:'t_'+Math.random().toString(36).slice(2,10),title,assignee,stage,status:stage==='Done'?'Done':'Open',createdAt:Date.now()});
+  saveDB(db); document.getElementById('tTitle').value=''; renderTasks();
+});
+document.getElementById('onlyMine').addEventListener('change',renderTasks);
+document.getElementById('hideDone').addEventListener('change',renderTasks);
+</script>
 </body>
 </html>
