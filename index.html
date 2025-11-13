@@ -3,12 +3,11 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>İş Takip – Demo (Statik)</title>
-  <meta name="description" content="Şifre kapılı ve rol tabanlı statik iş takip uygulaması.">
+  <title>İş Takip v2 – Sipariş Akışlı</title>
+  <meta name="description" content="Şifre kapılı, rol tabanlı iş takip. Sipariş bazlı akış ve arşiv.">
   <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
-  <!-- Gate: sadece şifre ile içeri -->
   <div id="gate" class="gate">
     <div class="card">
       <h1>Hoş geldin</h1>
@@ -19,7 +18,6 @@
     </div>
   </div>
 
-  <!-- Auth: kullanıcı girişi -->
   <div id="auth" class="center" hidden>
     <div class="card">
       <h2>Giriş yap</h2>
@@ -27,18 +25,19 @@
       <input id="loginUser" placeholder="örn. admin"/>
       <label>Şifre</label>
       <input id="loginPass" type="password" placeholder="••••••"/>
-      <button id="loginBtn">Giriş</button> <button id="resetDb" class="ghost">DB'yi Sıfırla</button>
+      <button id="loginBtn">Giriş</button>
+      <button id="resetDb" class="ghost">DB'yi Sıfırla</button>
       <p class="muted">İlk kez kullanıyorsan varsayılan admin: <code>admin / Admin@123</code></p>
       <p id="authMsg" class="danger"></p>
     </div>
   </div>
 
-  <!-- App -->
   <div id="app" hidden>
     <header class="topbar">
-      <div class="brand">İş Takip</div>
+      <div class="brand">İş Takip v2</div>
       <nav class="tabs">
-        <button data-tab="tasks" class="tab active">Görevler</button>
+        <button data-tab="orders" class="tab active">Siparişler</button>
+        <button data-tab="tasks" class="tab">Görevler</button>
         <button data-tab="admin" class="tab">Admin</button>
         <button data-tab="settings" class="tab">Ayarlar</button>
       </nav>
@@ -49,8 +48,39 @@
     </header>
 
     <main class="container">
-      <!-- TASKS TAB -->
-      <section id="tab-tasks">
+      <section id="tab-orders">
+        <div class="row">
+          <div class="col">
+            <h3>Yeni sipariş</h3>
+            <div class="form-grid-5">
+              <input id="oCode" placeholder="Sipariş kodu (unique)"/>
+              <input id="oPlaced" type="date"/>
+              <select id="oTemplate"></select>
+              <select id="oFirstAssignee"></select>
+              <button id="oAdd">Ekle</button>
+            </div>
+            <p class="muted">İlk adım varsayılanı <b>Placed</b>. Seçtiğin şablonun adımları sırayla uygulanır.</p>
+          </div>
+          <div class="col right">
+            <div class="filters">
+              <label><input type="checkbox" id="showArchived"/> Arşivi göster</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Kod</th><th>Placed</th><th>Adım</th><th>Atanan</th><th>Durum</th><th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="orderBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-tasks" hidden>
         <div class="row">
           <div class="col">
             <h3>Yeni görev</h3>
@@ -82,7 +112,6 @@
         </div>
       </section>
 
-      <!-- ADMIN TAB -->
       <section id="tab-admin" hidden>
         <div class="row">
           <div class="col">
@@ -112,7 +141,6 @@
         </div>
       </section>
 
-      <!-- SETTINGS TAB -->
       <section id="tab-settings" hidden>
         <h3>Workflow aşamaları</h3>
         <p class="muted">Aşamalar sırayla ilerler: ilk aşama başlangıç, son aşama tamamlanmış sayılır.</p>
@@ -121,7 +149,18 @@
           <button id="stageAdd">Aşama ekle</button>
         </div>
         <ol id="stageList" class="stages"></ol>
-        <button id="stageReset">Varsayılan aşamalar</button>
+
+        <h3 style="margin-top:1.2rem">Sipariş şablonları</h3>
+        <p class="muted">Şablonlar, yeni sipariş açarken seçilir.</p>
+        <div class="form-grid-5">
+          <input id="tplName" placeholder="Şablon adı (örn. ETA Süreci)"/>
+          <input id="tplSteps" placeholder="Adımlar (virgülle)"/>
+          <button id="tplAdd">Şablon ekle</button>
+          <button id="tplReset">Varsayılan şablon</button>
+        </div>
+        <ul id="tplList"></ul>
+
+        <button id="stageReset" style="margin-top:8px">Varsayılan görev aşamaları</button>
       </section>
     </main>
   </div>
