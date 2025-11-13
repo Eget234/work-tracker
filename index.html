@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>İş Takip – Demo (Statik)</title>
+  <meta name="description" content="Şifre kapılı ve rol tabanlı statik iş takip uygulaması.">
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <!-- Gate: sadece şifre ile içeri -->
+  <div id="gate" class="gate">
+    <div class="card">
+      <h1>Hoş geldin</h1>
+      <p>Devam etmek için şifreyi gir.</p>
+      <input id="gatePw" type="password" placeholder="Şifre (HELLOWORLD)" autocomplete="current-password"/>
+      <button id="gateBtn">Giriş</button>
+      <p id="gateMsg" class="muted"></p>
+    </div>
+  </div>
+
+  <!-- Auth: kullanıcı girişi -->
+  <div id="auth" class="center" hidden>
+    <div class="card">
+      <h2>Giriş yap</h2>
+      <label>Kullanıcı adı</label>
+      <input id="loginUser" placeholder="örn. admin"/>
+      <label>Şifre</label>
+      <input id="loginPass" type="password" placeholder="••••••"/>
+      <button id="loginBtn">Giriş</button>
+      <p class="muted">İlk kez kullanıyorsan varsayılan admin: <code>admin / Admin@123</code></p>
+      <p id="authMsg" class="danger"></p>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app" hidden>
+    <header class="topbar">
+      <div class="brand">İş Takip</div>
+      <nav class="tabs">
+        <button data-tab="tasks" class="tab active">Görevler</button>
+        <button data-tab="admin" class="tab">Admin</button>
+        <button data-tab="settings" class="tab">Ayarlar</button>
+      </nav>
+      <div class="userbox">
+        <span id="whoami">-</span>
+        <button id="logout">Çıkış</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <!-- TASKS TAB -->
+      <section id="tab-tasks">
+        <div class="row">
+          <div class="col">
+            <h3>Yeni görev</h3>
+            <div class="form-grid">
+              <input id="tTitle" placeholder="Başlık (örn. Fatura dosyası yükleme)"/>
+              <select id="tAssignee"></select>
+              <select id="tStage"></select>
+              <button id="tAdd">Ekle</button>
+            </div>
+            <p class="muted">Sadece admin görev atayabilir. Kullanıcılar kendi görevlerini ilerletebilir.</p>
+          </div>
+          <div class="col right">
+            <div class="filters">
+              <label><input type="checkbox" id="onlyMine"/> Sadece benim görevlerim</label>
+              <label><input type="checkbox" id="hideDone"/> Tamamlananları gizle</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>#</th><th>Başlık</th><th>Atanan</th><th>Aşama</th><th>Durum</th><th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="taskBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ADMIN TAB -->
+      <section id="tab-admin" hidden>
+        <div class="row">
+          <div class="col">
+            <h3>Kullanıcılar</h3>
+            <div class="form-grid">
+              <input id="uName" placeholder="Kullanıcı adı (örn. ege)"/>
+              <input id="uPass" placeholder="Şifre" type="password"/>
+              <select id="uRole">
+                <option value="user">user</option>
+                <option value="admin">admin</option>
+              </select>
+              <button id="uAdd">Ekle</button>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>Kullanıcı</th><th>Rol</th><th>Sil</th></tr></thead>
+                <tbody id="userBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="col">
+            <h3>Toplu işlemler</h3>
+            <button id="seedDemo">Demo veri yükle</button>
+            <button id="wipeAll" class="danger">Tüm veriyi sil</button>
+            <p class="muted">Tüm veriler tarayıcının <b>localStorage</b>'ında saklanır.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS TAB -->
+      <section id="tab-settings" hidden>
+        <h3>Workflow aşamaları</h3>
+        <p class="muted">Aşamalar sırayla ilerler: ilk aşama başlangıç, son aşama tamamlanmış sayılır.</p>
+        <div class="form-grid">
+          <input id="stageInput" placeholder="Aşama adı (örn. Backlog)"/>
+          <button id="stageAdd">Aşama ekle</button>
+        </div>
+        <ol id="stageList" class="stages"></ol>
+        <button id="stageReset">Varsayılan aşamalar</button>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
