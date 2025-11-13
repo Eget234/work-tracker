@@ -1,5 +1,5 @@
 // Şifre kapısı: HELLOWORLD (SHA-256 karşılaştırması)
-const HELLO_HASH = "872e4e50ce9990d8b041330c47c9ddd11bec6ca36c07ed3a6f97409825caeae0"; // "HELLOWORLD"
+const HELLO_HASH = window.HELLO_HASH;
 
 async function sha256Hex(s){
   const data = new TextEncoder().encode(s);
